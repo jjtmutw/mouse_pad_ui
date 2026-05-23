@@ -25,6 +25,16 @@ Start the receiver:
 
 Then open `mouse_pad_ui.html` in a browser and use the touch controls.
 
+## Build the EXE
+
+Regenerate the Windows receiver executable:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build_rotary_exe.ps1
+```
+
+The output is written to `dist\rotary_PC.exe`.
+
 ## MQTT
 
 Edit `mouse_pad_config.js` to make the browser UI and Python receiver use the same MQTT settings:
