@@ -58,6 +58,16 @@ MQTT_CONFIG = CONFIG["mqtt"]
 BROKER = str(MQTT_CONFIG.get("broker") or DEFAULT_CONFIG["mqtt"]["broker"])
 PORT = int(MQTT_CONFIG.get("port") or DEFAULT_CONFIG["mqtt"]["port"])
 TOPIC = str(MQTT_CONFIG.get("topic") or DEFAULT_CONFIG["mqtt"]["topic"])
+HOTKEYS = {
+    "window_close": ("alt", "f4"),
+    "window_maximize": ("win", "up"),
+    "window_minimize": ("win", "down"),
+    "tab_switch": ("ctrl", "tab"),
+    "tab_prev": ("ctrl", "shift", "tab"),
+    "tab_close": ("ctrl", "w"),
+    "reload": ("ctrl", "r"),
+    "tab_new": ("ctrl", "t"),
+}
 
 def limit(v, min_v=-800, max_v=800):
     return max(min_v, min(max_v, int(v)))
@@ -118,6 +128,12 @@ def on_message(client, userdata, msg):
             safe_action(lambda: pyautogui.press("pageup"))
         elif direction == "down":
             safe_action(lambda: pyautogui.press("pagedown"))
+
+    elif cmd_type == "hotkey":
+        action = data.get("action")
+        keys = HOTKEYS.get(action)
+        if keys:
+            safe_action(lambda: pyautogui.hotkey(*keys))
 
     elif cmd_type == "stop":
         pass
