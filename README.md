@@ -25,6 +25,24 @@ Start the receiver:
 
 Then open `mouse_pad_ui.html` in a browser and use the touch controls.
 
+## Controls
+
+The UI is split into two fullscreen landscape pages:
+
+- Settings page: MQTT broker, topic, movement speed, send interval, scroll speed, connect, and disconnect.
+- Control page: touch pad, left/right click, page up/down, scroll wheel, window controls, and browser tab controls.
+
+The extra control buttons send keyboard shortcuts from the receiver PC:
+
+- Close window: `Alt+F4`
+- Maximize window: `Win+Up`
+- Minimize window: `Win+Down`
+- Switch tab: `Ctrl+Tab`
+- Previous tab: `Ctrl+Shift+Tab`
+- Close tab: `Ctrl+W`
+- Reload: `Ctrl+R`
+- New tab: `Ctrl+T`
+
 ## Build the EXE
 
 Regenerate the Windows receiver executable:
