@@ -73,7 +73,7 @@
     }
 
     .settings-zone { grid-template-rows: auto minmax(0, 1fr) auto; }
-    .wheel-zone { grid-template-rows: 1fr minmax(0, 1.75fr) 1fr auto; }
+    .wheel-zone { grid-template-rows: 1fr minmax(0, 1.8fr) 1fr; }
     .pad-zone { grid-template-rows: minmax(0, 1fr) clamp(54px, 9.5dvh, 78px); }
 
     .card {
@@ -136,8 +136,7 @@
       .stage { width: 100vw; height: 100dvh; }
       .console { grid-template-columns: 1fr; grid-template-rows: auto minmax(160px, .7fr) minmax(0, 1fr); }
       .settings-zone { grid-template-rows: auto auto; }
-      .wheel-zone { grid-template-columns: 1fr 1.4fr 1fr; grid-template-rows: 72px auto; }
-      .wheel-speed-card { grid-column: 1 / -1; }
+      .wheel-zone { grid-template-columns: 1fr 1.4fr 1fr; grid-template-rows: 72px; }
       .pad-zone { grid-template-rows: minmax(0, 1fr) 68px; }
     }
   </style>
@@ -170,6 +169,10 @@
             <label>送出間隔：<span class="range-value" id="rateText">35</span> ms</label>
             <input id="rateRange" type="range" min="20" max="60" step="5" value="35" />
           </div>
+          <div class="field">
+            <label>滾輪速度：<span class="range-value" id="scrollSpeedText">1.0</span>x</label>
+            <input id="scrollSpeedRange" type="range" min="0.5" max="50" step="0.5" value="1.0" />
+          </div>
           <div class="button-row">
             <button class="btn primary" id="connectBtn">連線</button>
             <button class="btn" id="disconnectBtn">斷線</button>
@@ -183,10 +186,6 @@
           <div class="scroll-thumb" id="scrollThumb"></div>
         </div>
         <button class="btn page" id="pageDownBtn">下頁</button>
-        <div class="card wheel-speed-card">
-          <label>滾輪速度：<span class="range-value" id="scrollSpeedText">1.0</span>x</label>
-          <input id="scrollSpeedRange" type="range" min="0.5" max="10" step="0.1" value="1.0" />
-        </div>
       </section>
 
       <section class="pad-zone">
@@ -241,6 +240,9 @@
     let lastScrollSend = 0;
     let scrollVisualOffset = 0;
     let immersiveRequested = false;
+    let lastPadTap = 0;
+    let padStartX = 0;
+    let padStartY = 0;
 
     applyUrlParams();
 
@@ -389,7 +391,7 @@
       lastScrollSend = now;
 
       const scrollSpeed = Number(scrollSpeedRange.value);
-      const scrollPower = Math.round(clamp(-rawDeltaY * 0.45 * scrollSpeed, -80, 80));
+      const scrollPower = Math.round(clamp(-rawDeltaY * 0.45 * scrollSpeed, -400, 400));
       if (scrollPower === 0) return;
 
       scrollVisualOffset = clamp(scrollVisualOffset + rawDeltaY * 0.22, -18, 18);
@@ -408,11 +410,17 @@
       publish({ type: 'page', target: 'pc_mouse', direction });
     }
 
+    function isQuickTap(event, startX, startY) {
+      return Math.hypot(event.clientX - startX, event.clientY - startY) < 10;
+    }
+
     pad.addEventListener('pointerdown', event => {
       enterImmersiveMode();
       dragging = true;
       pad.classList.add('dragging');
       pad.setPointerCapture(event.pointerId);
+      padStartX = event.clientX;
+      padStartY = event.clientY;
       lastX = event.clientX;
       lastY = event.clientY;
       setPadVisual(event.clientX, event.clientY, 0, 0);
@@ -436,7 +444,17 @@
       publish({ type: 'stop', target: 'pc_mouse' });
     }
 
-    pad.addEventListener('pointerup', stopPad);
+    pad.addEventListener('pointerup', event => {
+      const quickTap = isQuickTap(event, padStartX, padStartY);
+      const now = performance.now();
+      stopPad();
+      if (quickTap && now - lastPadTap < 320) {
+        publish({ type: 'click', target: 'pc_mouse', button: 'left' });
+        lastPadTap = 0;
+      } else if (quickTap) {
+        lastPadTap = now;
+      }
+    });
     pad.addEventListener('pointercancel', stopPad);
     pad.addEventListener('lostpointercapture', () => { if (dragging) stopPad(); });
 
