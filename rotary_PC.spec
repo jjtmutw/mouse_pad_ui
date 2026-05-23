@@ -6,10 +6,10 @@ block_cipher = None
 
 a = Analysis(
     ['rotary_PC.py'],
-    pathex=['.\\.venv\\Lib\\site-packages'],
+    pathex=[],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    hiddenimports=['pyautogui'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
