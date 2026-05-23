@@ -61,6 +61,7 @@ TOPIC = str(MQTT_CONFIG.get("topic") or DEFAULT_CONFIG["mqtt"]["topic"])
 HOTKEYS = {
     "window_close": ("alt", "f4"),
     "window_maximize": ("win", "up"),
+    "window_fullscreen": ("f11",),
     "window_minimize": ("win", "down"),
     "tab_switch": ("ctrl", "tab"),
     "tab_prev": ("ctrl", "shift", "tab"),
