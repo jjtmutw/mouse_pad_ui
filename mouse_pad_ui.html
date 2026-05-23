@@ -73,7 +73,7 @@
     .page.active { display: grid; }
 
     .settings-page { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); }
-    .control-page { grid-template-columns: minmax(0, 1.35fr) minmax(190px, .65fr); }
+    .control-page { grid-template-columns: minmax(190px, .58fr) minmax(82px, .32fr) minmax(0, 1.25fr); }
 
     .panel {
       min-width: 0;
@@ -91,7 +91,8 @@
     .settings-form { display: grid; align-content: center; gap: clamp(8px, .9vw, 12px); }
     .settings-side { grid-template-rows: auto 1fr auto; gap: clamp(8px, 1vw, 14px); }
     .control-main { grid-template-rows: minmax(0, 1fr) clamp(56px, 10dvh, 82px); gap: clamp(8px, 1vw, 14px); }
-    .control-side { grid-template-rows: auto minmax(0, 1fr) auto; gap: clamp(8px, 1vw, 14px); }
+    .wheel-zone { grid-template-rows: minmax(54px, 1fr) minmax(0, 1.8fr) minmax(54px, 1fr); gap: clamp(8px, 1vw, 14px); }
+    .control-side { grid-template-rows: auto minmax(0, 1fr); gap: clamp(8px, 1vw, 14px); }
 
     .title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
     h1, h2 { margin: 0; line-height: 1.05; letter-spacing: .04em; }
@@ -130,7 +131,6 @@
     .thumb span { width: 38%; aspect-ratio: 1; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 12px var(--cyan), 0 0 24px var(--cyan-soft); }
     .vector-line { position: absolute; left: 50%; top: 50%; width: 3px; height: 0; transform-origin: 50% 0; background: linear-gradient(var(--cyan), transparent); border-radius: 99px; box-shadow: 0 0 12px var(--cyan-soft); pointer-events: none; }
 
-    .wheel-strip { display: grid; grid-template-columns: minmax(74px, .7fr) minmax(96px, 1fr) minmax(74px, .7fr); gap: 8px; min-height: 0; }
     .wheel-card { border-radius: clamp(16px, 2vw, 26px); position: relative; overflow: hidden; touch-action: none; cursor: ns-resize; background: linear-gradient(90deg, transparent 0 23%, rgba(255,255,255,.08) 24% 26%, transparent 27% 73%, rgba(255,255,255,.08) 74% 76%, transparent 77% 100%), repeating-linear-gradient(180deg, rgba(18,217,255,.24) 0 2px, transparent 2px 12px), linear-gradient(145deg, #30363b, #101315); border: 1px solid var(--line); box-shadow: inset 0 1px 2px rgba(255,255,255,.14), inset 0 -8px 16px rgba(0,0,0,.62), 0 9px 18px rgba(0,0,0,.28); }
     .wheel-card::before, .wheel-card::after { position: absolute; left: 50%; transform: translateX(-50%); color: rgba(231,247,255,.60); font-size: clamp(8px, .8vw, 12px); letter-spacing: .12em; pointer-events: none; white-space: nowrap; }
     .wheel-card::before { content: "SCROLL UP"; top: 8px; }
@@ -140,9 +140,10 @@
 
     @media (orientation: portrait) {
       .stage { width: 100vw; height: 100dvh; }
-      .settings-page, .control-page { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
-      .control-side { grid-template-rows: auto auto auto; }
-      .utility-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .settings-page { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
+      .control-page { grid-template-columns: minmax(160px, .58fr) minmax(78px, .3fr) minmax(0, 1.2fr); grid-template-rows: minmax(0, 1fr); }
+      .control-side { grid-template-rows: auto minmax(0, 1fr); }
+      .utility-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -191,6 +192,32 @@
       </section>
 
       <section class="page control-page" id="controlPage">
+        <div class="panel control-side">
+          <div class="title-row">
+            <h2>操控頁</h2>
+            <button class="btn" id="goSettingsBtn">設定</button>
+          </div>
+          <div class="button-grid utility-grid">
+            <button class="btn" data-hotkey="window_close">關閉視窗</button>
+            <button class="btn" data-hotkey="window_maximize">放大視窗</button>
+            <button class="btn" data-hotkey="window_minimize">縮小視窗</button>
+            <button class="btn" data-hotkey="tab_switch">切換分頁</button>
+            <button class="btn danger" data-hotkey="tab_close">關閉分頁</button>
+            <button class="btn" data-hotkey="reload">重新整理</button>
+            <button class="btn primary" data-hotkey="tab_new">開新分頁</button>
+            <button class="btn" data-hotkey="tab_prev">前分頁</button>
+            <button class="btn" data-hotkey="tab_switch">後分頁</button>
+          </div>
+        </div>
+
+        <div class="panel wheel-zone">
+          <button class="btn" id="pageUpBtn">上頁</button>
+          <div class="wheel-card" id="scrollWheel" aria-label="上下滑動滾輪">
+            <div class="scroll-thumb" id="scrollThumb"></div>
+          </div>
+          <button class="btn" id="pageDownBtn">下頁</button>
+        </div>
+
         <div class="panel control-main">
           <div class="pad-wrap">
             <div class="touch-pad" id="pad" aria-label="MQTT 觸控滑鼠板">
@@ -202,31 +229,6 @@
           <div class="button-row">
             <button class="btn" id="leftClickBtn">左鍵</button>
             <button class="btn" id="rightClickBtn">右鍵</button>
-          </div>
-        </div>
-
-        <div class="panel control-side">
-          <div class="title-row">
-            <h2>操控頁</h2>
-            <button class="btn" id="goSettingsBtn">設定</button>
-          </div>
-          <div class="button-grid utility-grid">
-            <button class="btn" id="pageUpBtn">上頁</button>
-            <button class="btn" id="pageDownBtn">下頁</button>
-            <button class="btn" data-hotkey="window_close">關閉視窗</button>
-            <button class="btn" data-hotkey="window_maximize">放大視窗</button>
-            <button class="btn" data-hotkey="window_minimize">縮小視窗</button>
-            <button class="btn" data-hotkey="tab_switch">切換分頁</button>
-            <button class="btn danger" data-hotkey="tab_close">關閉分頁</button>
-            <button class="btn" data-hotkey="reload">重新整理</button>
-            <button class="btn primary" data-hotkey="tab_new">開新分頁</button>
-          </div>
-          <div class="wheel-strip">
-            <button class="btn" data-hotkey="tab_prev">前分頁</button>
-            <div class="wheel-card" id="scrollWheel" aria-label="上下滑動滾輪">
-              <div class="scroll-thumb" id="scrollThumb"></div>
-            </div>
-            <button class="btn" data-hotkey="tab_switch">後分頁</button>
           </div>
         </div>
       </section>
