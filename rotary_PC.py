@@ -3,6 +3,8 @@
 import json
 import re
 import sys
+import time
+import uuid
 from pathlib import Path
 
 import pyautogui
@@ -19,6 +21,9 @@ CONFIG_FILE = "mouse_pad_config.js"
 EDGE_PADDING = 4
 
 pyautogui.FAILSAFE = True
+
+def log(*args):
+    print(*args, flush=True)
 
 def app_dir():
     if getattr(sys, "frozen", False):
@@ -44,12 +49,12 @@ def load_config():
         try:
             loaded = read_config_file(config_path)
             config["mqtt"].update(loaded.get("mqtt", loaded))
-            print("Loaded config:", config_path)
+            log("Loaded config:", config_path)
         except Exception as error:
-            print(f"Config load failed ({config_path}): {error}")
-            print("Using default MQTT settings.")
+            log(f"Config load failed ({config_path}): {error}")
+            log("Using default MQTT settings.")
     else:
-        print("Config not found, using defaults:", config_path)
+        log("Config not found, using defaults:", config_path)
 
     return config
 
@@ -91,12 +96,15 @@ def safe_action(action):
     try:
         action()
     except pyautogui.FailSafeException:
-        print("PyAutoGUI fail-safe touched. Move the pointer away from the corner or use the touch pad again.")
+        log("PyAutoGUI fail-safe touched. Move the pointer away from the corner or use the touch pad again.")
 
 def on_connect(client, userdata, flags, reason_code, properties=None):
-    print("MQTT connected:", reason_code)
+    log("MQTT connected:", reason_code)
     client.subscribe(TOPIC)
-    print("Subscribed:", TOPIC)
+    log("Subscribed:", TOPIC)
+
+def on_disconnect(client, userdata, disconnect_flags, reason_code, properties=None):
+    log("MQTT disconnected:", reason_code)
 
 def on_message(client, userdata, msg):
     try:
@@ -141,11 +149,21 @@ def on_message(client, userdata, msg):
 
 client = mqtt.Client(
     mqtt.CallbackAPIVersion.VERSION2,
-    client_id="JJ_PC_Mouse_Receiver"
+    client_id=f"JJ_PC_Mouse_Receiver_{uuid.uuid4().hex[:8]}"
 )
 
 client.on_connect = on_connect
+client.on_disconnect = on_disconnect
 client.on_message = on_message
 
-client.connect(BROKER, PORT, 60)
+client.reconnect_delay_set(min_delay=1, max_delay=10)
+
+while True:
+    try:
+        client.connect(BROKER, PORT, 60)
+        break
+    except OSError as error:
+        log(f"MQTT connect failed: {error}. Retrying in 5 seconds.")
+        time.sleep(5)
+
 client.loop_forever()

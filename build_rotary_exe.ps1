@@ -31,9 +31,24 @@ $env:PYINSTALLER_CONFIG_DIR = $cacheDir
 
 if (-not (Test-Path $pythonExe)) {
   python -m venv $venvDir
+  if ($LASTEXITCODE -ne 0) {
+    throw "Failed to create virtual environment."
+  }
 }
 
-& $pythonExe -m pip install --disable-pip-version-check --no-cache-dir --no-build-isolation -r (Join-Path $root "requirements.txt") pyinstaller==5.10.1
-& $pythonExe -m PyInstaller (Join-Path $root "rotary_PC.spec") --noconfirm
+& $pythonExe -m pip install --disable-pip-version-check --no-cache-dir --upgrade pip "setuptools<81" wheel
+if ($LASTEXITCODE -ne 0) {
+  throw "Failed to install build tooling."
+}
+
+& $pythonExe -m pip install --disable-pip-version-check --no-cache-dir --no-build-isolation -r (Join-Path $root "requirements.txt") "pyinstaller>=6,<7"
+if ($LASTEXITCODE -ne 0) {
+  throw "Failed to install receiver dependencies."
+}
+
+& $pythonExe -m PyInstaller (Join-Path $root "rotary_PC.spec") --noconfirm --clean
+if ($LASTEXITCODE -ne 0) {
+  throw "Failed to build dist\rotary_PC.exe."
+}
 
 Write-Host "Built dist\rotary_PC.exe"
