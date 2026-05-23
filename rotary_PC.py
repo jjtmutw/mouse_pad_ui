@@ -1,15 +1,63 @@
 # pip install paho-mqtt pyautogui
 
 import json
+import re
+import sys
+from pathlib import Path
+
 import pyautogui
 import paho.mqtt.client as mqtt
 
-BROKER = "broker.emqx.io"
-PORT = 1883
-TOPIC = "JJ/mouse/pad/cmd"
+DEFAULT_CONFIG = {
+    "mqtt": {
+        "broker": "broker.emqx.io",
+        "port": 1883,
+        "topic": "JJ/mouse/pad/cmd",
+    }
+}
+CONFIG_FILE = "mouse_pad_config.js"
 EDGE_PADDING = 4
 
 pyautogui.FAILSAFE = True
+
+def app_dir():
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+def read_config_file(path):
+    raw = path.read_text(encoding="utf-8")
+    match = re.search(r"window\.MOUSE_PAD_CONFIG\s*=\s*(\{.*\})\s*;?\s*$", raw, re.S)
+    if not match:
+        return json.loads(raw)
+    return json.loads(match.group(1))
+
+def load_config():
+    config = json.loads(json.dumps(DEFAULT_CONFIG))
+    search_dirs = []
+    for path in [app_dir(), app_dir().parent, Path.cwd()]:
+        if path not in search_dirs:
+            search_dirs.append(path)
+    config_path = next((path / CONFIG_FILE for path in search_dirs if (path / CONFIG_FILE).exists()), search_dirs[0] / CONFIG_FILE)
+
+    if config_path.exists():
+        try:
+            loaded = read_config_file(config_path)
+            config["mqtt"].update(loaded.get("mqtt", loaded))
+            print("Loaded config:", config_path)
+        except Exception as error:
+            print(f"Config load failed ({config_path}): {error}")
+            print("Using default MQTT settings.")
+    else:
+        print("Config not found, using defaults:", config_path)
+
+    return config
+
+CONFIG = load_config()
+MQTT_CONFIG = CONFIG["mqtt"]
+BROKER = str(MQTT_CONFIG.get("broker") or DEFAULT_CONFIG["mqtt"]["broker"])
+PORT = int(MQTT_CONFIG.get("port") or DEFAULT_CONFIG["mqtt"]["port"])
+TOPIC = str(MQTT_CONFIG.get("topic") or DEFAULT_CONFIG["mqtt"]["topic"])
 
 def limit(v, min_v=-800, max_v=800):
     return max(min_v, min(max_v, int(v)))
