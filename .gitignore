@@ -6,3 +6,10 @@ env/
 .env
 .DS_Store
 Thumbs.db
+build/
+.pyinstaller-cache/
+_pyinstaller_local_patch/
+_github_upload_work/
+*.log
+*.stdout.txt
+*.stderr.txt
